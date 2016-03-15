@@ -4,7 +4,8 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:name=".Raneen"
+        android:icon="@mipmap/bell96"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
@@ -16,6 +17,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver android:name=".AlarmBCReceiver">
+        </receiver>
+
+        <service android:name=".RaneenService">
+        </service>
+
     </application>
 
 </manifest>
