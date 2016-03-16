@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Done", Toast.LENGTH_SHORT).show();
                 Intent serviceIntent = new Intent(Raneen.getContext(), RaneenService.class);
                 serviceIntent.putExtra("alarm", "firstTime");
+                serviceIntent.putExtra("currentLec",0);
                 Raneen.getContext().startService(serviceIntent);
             }
 

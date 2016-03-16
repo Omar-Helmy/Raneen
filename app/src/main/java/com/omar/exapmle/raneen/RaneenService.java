@@ -31,6 +31,8 @@ public class RaneenService extends IntentService {
 
     LayoutInflater inflater = (LayoutInflater) Raneen.getContext().getSystemService(LAYOUT_INFLATER_SERVICE);
 
+    int currentLec;
+
     public RaneenService() {
         super("RaneenService");
     }
@@ -40,6 +42,7 @@ public class RaneenService extends IntentService {
 
         setLecsCalenders();
         String alarmStatus = intent.getStringExtra("alarm");
+        currentLec = intent.getIntExtra("currentLec",0);
 
         switch (alarmStatus){
             case "nextLec":
@@ -58,7 +61,7 @@ public class RaneenService extends IntentService {
                 // silent phone
                 // run hour and half
                 setRingerModeVibrate();
-                setAlarm("nextLec", currentTimeMillis + LEC_DURATION);
+                setAlarm("nextLec", lecs.get(currentLec).getTimeInMillis() + LEC_DURATION, currentLec);
                 break;
             }
         }
@@ -68,7 +71,8 @@ public class RaneenService extends IntentService {
     private boolean setAlarmIfGreen(String lec, int i){
         if( (!Raneen.sharedPref.getString(lec,"null").equals("null")) &&
                 ((lecs.get(i).getTimeInMillis() >= currentTimeMillis) || ((lecs.get(i).getTimeInMillis() < currentTimeMillis)&&((lecs.get(i).getTimeInMillis()+LEC_DURATION) > currentTimeMillis)))) {
-            setAlarm("lecDuration", lecs.get(i).getTimeInMillis());
+            setAlarm("lecDuration", lecs.get(i).getTimeInMillis(), i);
+            currentLec = i;
             return true;
         }
         else {
@@ -105,11 +109,12 @@ public class RaneenService extends IntentService {
         lecs.get(4).set(Calendar.SECOND, 0);
     }
 
-    private void setAlarm(String msg, long time){
+    private void setAlarm(String msg, long time, int i){
 
         // 1. Intent to the BCR
         Intent alarmBCRIntent = new Intent(Raneen.getContext(), AlarmBCReceiver.class);
         alarmBCRIntent.putExtra("alarm", msg);
+        alarmBCRIntent.putExtra("currentLec",i);
         // 2. Create PendingIntent to put the above intent inside it.
         // PendingIntent used to describe an Intent, and encapsulate info
         // This code returns the pending intent but suitable to use to broadcast intent
