@@ -42,7 +42,7 @@ public class RaneenService extends IntentService {
 
         setLecsCalenders();
         String alarmStatus = intent.getStringExtra("alarm");
-        currentLec = intent.getIntExtra("currentLec",0);
+        currentLec = intent.getIntExtra("currentLec",-1);
 
         switch (alarmStatus){
             case "nextLec":
@@ -72,7 +72,6 @@ public class RaneenService extends IntentService {
         if( (!Raneen.sharedPref.getString(lec,"null").equals("null")) &&
                 ((lecs.get(i).getTimeInMillis() >= currentTimeMillis) || ((lecs.get(i).getTimeInMillis() < currentTimeMillis)&&((lecs.get(i).getTimeInMillis()+LEC_DURATION) > currentTimeMillis)))) {
             setAlarm("lecDuration", lecs.get(i).getTimeInMillis(), i);
-            currentLec = i;
             return true;
         }
         else {
