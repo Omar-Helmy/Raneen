@@ -22,10 +22,10 @@ public class RaneenService extends IntentService {
 
     // create array of all 5 lecs
     private final ArrayList<Calendar> lecs = new ArrayList<>(5);
-    private final static long lecDuration = 5400000;
+    private final static long LEC_DURATION = 5400000; // hour and half hour = 90 min
     // Current calender:
-    private Calendar currentCalender = GregorianCalendar.getInstance();
-    private long currentTimeMillis = currentCalender.getTimeInMillis();
+    private final Calendar currentCalender = GregorianCalendar.getInstance();
+    private final long currentTimeMillis = currentCalender.getTimeInMillis();
     // Audio:
     private AudioManager audioManager = (AudioManager) Raneen.getContext().getSystemService(Context.AUDIO_SERVICE);
 
@@ -42,31 +42,23 @@ public class RaneenService extends IntentService {
         String alarmStatus = intent.getStringExtra("alarm");
 
         switch (alarmStatus){
-            case "nextLec":{
+            case "nextLec":
+            case "firstTime":
+            {
+                // if a lec finished or last lec, open ringer:
+                if(alarmStatus.equals("nextLec")) setRingerModeNormal();
                 if (setAlarmIfGreen("lec1",0)) break;
                 if (setAlarmIfGreen("lec2",1)) break;
-                if (setAlarmIfGreen("lec3",2)) break;
+                if (setAlarmIfGreen("lec3", 2)) break;
                 if (setAlarmIfGreen("lec4",3)) break;
                 if (setAlarmIfGreen("lec5",4)) break;
-                // if no lecs, open ringer:
-                setRingerModeNormal();
                 break;
             }
             case "lecDuration":{
-                Handler handler = new Handler(Looper.getMainLooper());
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast toast = new Toast(Raneen.getContext());
-                        toast.setView(inflater.inflate(R.layout.toast_ring_mute, null));
-                        toast.setDuration(Toast.LENGTH_SHORT);
-                        toast.show();
-                    }
-                });
-                // run hour and half
                 // silent phone
-                setAlarm("nextLec", currentTimeMillis + 30000);
-                audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+                // run hour and half
+                setRingerModeVibrate();
+                setAlarm("nextLec", currentTimeMillis + LEC_DURATION);
                 break;
             }
         }
@@ -74,9 +66,9 @@ public class RaneenService extends IntentService {
     }
 
     private boolean setAlarmIfGreen(String lec, int i){
-        if((lecs.get(i).getTimeInMillis() >= currentTimeMillis) && (!Raneen.sharedPref.getString(lec,"null").equals("null"))) {
+        if( (!Raneen.sharedPref.getString(lec,"null").equals("null")) &&
+                ((lecs.get(i).getTimeInMillis() >= currentTimeMillis) || ((lecs.get(i).getTimeInMillis() < currentTimeMillis)&&((lecs.get(i).getTimeInMillis()+LEC_DURATION) > currentTimeMillis)))) {
             setAlarm("lecDuration", lecs.get(i).getTimeInMillis());
-            setRingerModeNormal();
             return true;
         }
         else {
@@ -92,24 +84,24 @@ public class RaneenService extends IntentService {
             lecs.add(i, GregorianCalendar.getInstance());
 
         // change current time to specific hour, minute, second:
-        lecs.get(0).set(Calendar.HOUR_OF_DAY, 0);
-        lecs.get(0).set(Calendar.MINUTE, 40);
+        lecs.get(0).set(Calendar.HOUR_OF_DAY, 8);
+        lecs.get(0).set(Calendar.MINUTE, 30);
         lecs.get(0).set(Calendar.SECOND, 0);
 
-        lecs.get(1).set(Calendar.HOUR_OF_DAY, 0);
-        lecs.get(1).set(Calendar.MINUTE, 41);
+        lecs.get(1).set(Calendar.HOUR_OF_DAY, 10);
+        lecs.get(1).set(Calendar.MINUTE, 15);
         lecs.get(1).set(Calendar.SECOND, 0);
 
-        lecs.get(2).set(Calendar.HOUR_OF_DAY, 0);
-        lecs.get(2).set(Calendar.MINUTE, 42);
+        lecs.get(2).set(Calendar.HOUR_OF_DAY, 12);
+        lecs.get(2).set(Calendar.MINUTE, 15);
         lecs.get(2).set(Calendar.SECOND, 0);
 
-        lecs.get(3).set(Calendar.HOUR_OF_DAY, 0);
-        lecs.get(3).set(Calendar.MINUTE, 43);
+        lecs.get(3).set(Calendar.HOUR_OF_DAY, 14);
+        lecs.get(3).set(Calendar.MINUTE, 0);
         lecs.get(3).set(Calendar.SECOND, 0);
 
-        lecs.get(4).set(Calendar.HOUR_OF_DAY, 0);
-        lecs.get(4).set(Calendar.MINUTE, 44);
+        lecs.get(4).set(Calendar.HOUR_OF_DAY, 15);
+        lecs.get(4).set(Calendar.MINUTE, 45);
         lecs.get(4).set(Calendar.SECOND, 0);
     }
 
@@ -142,6 +134,20 @@ public class RaneenService extends IntentService {
                 toast.show();
             }
         });
+    }
 
+    private void setRingerModeVibrate(){
+
+        audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Toast toast = new Toast(Raneen.getContext());
+                toast.setView(inflater.inflate(R.layout.toast_ring_mute, null));
+                toast.setDuration(Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
     }
 }

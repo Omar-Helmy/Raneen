@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="Lecture Duration"
+        android:key="pref_key_storage_settings">
+        <CheckBoxPreference
+            android:key="lec_duration"
+            android:summary="insert"
+            android:title="Select lecture duration"
+            android:defaultValue="90 minutes" />
+        <Preference
+            android:key="pref_key_sms_delete_limit"
+            android:summary="insert"
+            android:title="AAA" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

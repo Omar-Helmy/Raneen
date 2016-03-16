@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal" android:layout_width="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
     android:background="@color/Green"
     android:padding="10dp"
     android:layout_height="wrap_content">
@@ -13,6 +15,6 @@
         android:paddingLeft="4dp"
         android:layout_gravity="center_vertical"
         android:layout_height="wrap_content"
-        android:text="Ringer Mode Silent"/>
+        android:text="Ringer Mode Vibration"/>
 
 </LinearLayout>

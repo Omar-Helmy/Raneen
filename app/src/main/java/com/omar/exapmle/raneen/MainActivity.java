@@ -17,6 +17,9 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btn1, btn2, btn3, btn4, btn5;
     private FloatingActionButton fabSave, fabCancel;
+    private SharedPreferences.Editor toggleEditor = Raneen.sharedPref.edit(); // request editing shared pref file;
+    SharedPreferences.Editor restoreEditor = Raneen.sharedPref.edit(); // request editing shared pref file
+    private boolean[] btns = new boolean[5];
 
     //private String firstLec = null;
 
@@ -48,20 +51,21 @@ public class MainActivity extends AppCompatActivity {
 
 
         // check previous state of each button (red or green):
-        restoreBtnPref("lec1",btn1);
-        restoreBtnPref("lec2",btn2);
-        restoreBtnPref("lec3",btn3);
-        restoreBtnPref("lec4",btn4);
-        restoreBtnPref("lec5",btn5);
+        restoreBtnPref("lec1",btn1,0);
+        restoreBtnPref("lec2",btn2,1);
+        restoreBtnPref("lec3",btn3,2);
+        restoreBtnPref("lec4",btn4,3);
+        restoreBtnPref("lec5",btn5,4);
 
 
         fabSave.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 //fabCancel.setVisibility(View.VISIBLE);
+                toggleEditor.apply();
                 // start service here
                 Toast.makeText(MainActivity.this, "Done", Toast.LENGTH_SHORT).show();
                 Intent serviceIntent = new Intent(Raneen.getContext(), RaneenService.class);
-                serviceIntent.putExtra("alarm", "nextLec");
+                serviceIntent.putExtra("alarm", "firstTime");
                 Raneen.getContext().startService(serviceIntent);
             }
 
@@ -69,6 +73,11 @@ public class MainActivity extends AppCompatActivity {
 
         fabCancel.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                cancelBtns("lec1",btn1);
+                cancelBtns("lec2",btn2);
+                cancelBtns("lec3",btn3);
+                cancelBtns("lec4",btn4);
+                cancelBtns("lec5",btn5);
                 Raneen.alarmManager.cancel(Raneen.pendingIntent);
                 Toast.makeText(MainActivity.this, "All schedules canceled", Toast.LENGTH_SHORT).show();
             }
@@ -103,6 +112,9 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            // Display the fragment as the main content.
+            Intent intent = new Intent(Raneen.getContext(), SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
 
@@ -116,23 +128,23 @@ public class MainActivity extends AppCompatActivity {
 
         switch (id){
             case R.id.lec1: {
-                toggleGreen("lec1", btn1);
+                toggleGreen("lec1", btn1,0);
                 break;
             }
             case R.id.lec2:{
-                    toggleGreen("lec2", btn2);
+                    toggleGreen("lec2", btn2,1);
                     break;
             }
             case R.id.lec3: {
-                toggleGreen("lec3", btn3);
+                toggleGreen("lec3", btn3,2);
                 break;
             }
             case R.id.lec4: {
-                toggleGreen("lec4", btn4);
+                toggleGreen("lec4", btn4,3);
                 break;
             }
             case R.id.lec5: {
-                toggleGreen("lec5", btn5);
+                toggleGreen("lec5", btn5,4);
                 break;
             }
 
@@ -141,32 +153,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void toggleGreen (String lec, Button btn){
+    private void toggleGreen (String lec, Button btn, int i){
 
-        SharedPreferences.Editor toggleEditor = Raneen.sharedPref.edit(); // request editing shared pref file
-
-        if(Raneen.sharedPref.getString(lec,"null").equals("null")) {
+        if(!btns[i]) {
             toggleEditor.putString(lec, "green");
+            btns[i] = !btns[i]; // true
             btn.setBackgroundColor(getResources().getColor(R.color.LightGreen));
         }else {
             toggleEditor.putString(lec, "null");
             btn.setBackgroundColor(getResources().getColor(R.color.LightRed));
+            btns[i] = !btns[i]; // false
         }
 
-        toggleEditor.apply();
     }
 
-    private void restoreBtnPref (String lec, Button btn){
+    private void restoreBtnPref (String lec, Button btn, int i){
 
         // check previous state of each button (red or green):
-         SharedPreferences.Editor restoreEditor = Raneen.sharedPref.edit(); // request editing shared pref file
 
         if(Raneen.sharedPref.getString(lec,"null").equals("null")) { // create new key
             restoreEditor.putString(lec, "null");
+            btns[i] = false;
             btn.setBackgroundColor(getResources().getColor(R.color.LightRed));
-        }else
+        }else {
             btn.setBackgroundColor(getResources().getColor(R.color.LightGreen));
+            btns[i] = true;
+        }
+        restoreEditor.apply(); // save
+    }
 
+    private void cancelBtns (String lec, Button btn){
+
+        restoreEditor.putString(lec, "null");
+        btn.setBackgroundColor(getResources().getColor(R.color.LightRed));
         restoreEditor.apply(); // save
     }
 
