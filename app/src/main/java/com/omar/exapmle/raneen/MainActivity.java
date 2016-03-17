@@ -1,13 +1,11 @@
 package com.omar.exapmle.raneen;
 
-import android.app.Notification;
-import android.app.NotificationManager;
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -24,10 +22,8 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences.Editor toggleEditor = Raneen.sharedPref.edit(); // request editing shared pref file;
     SharedPreferences.Editor restoreEditor = Raneen.sharedPref.edit(); // request editing shared pref file
     private boolean[] btns = new boolean[5];
-    // Sets an ID for the notification
-    private final static int notificationID = 1;
-    // Gets an instance of the NotificationManager service
-    NotificationManager mNotifyMgr;
+
+
 
 
 
@@ -36,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         // tool bar:
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
@@ -58,24 +53,7 @@ public class MainActivity extends AppCompatActivity {
         restoreBtnPref("lec2",btn2,1);
         restoreBtnPref("lec3",btn3,2);
         restoreBtnPref("lec4",btn4,3);
-        restoreBtnPref("lec5",btn5,4);
-
-
-        // notification:
-        final NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.mipmap.bell96)
-                        .setContentTitle("Raneen schedule service is running")
-                        .setTicker("Raneen schedule service is running")
-                        .setAutoCancel(false)
-                        .setPriority(Notification.PRIORITY_MAX)
-                        .setOngoing(true)
-                        .setContentText("Click here to open the app");
-        Intent resultIntent = new Intent(this, MainActivity.class);
-        // Because clicking the notification opens a new ("special") activity, there's
-        // no need to create an artificial back stack.
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(resultPendingIntent);
+        restoreBtnPref("lec5", btn5, 4);
 
 
         fabSave.setOnClickListener(new View.OnClickListener() {
@@ -83,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 for (boolean btn : btns)
                     if (btn) { // at least one schedule
                         //fabCancel.setVisibility(View.VISIBLE);
-                        Raneen.alarmManager.cancel(Raneen.pendingIntent);
+                        Raneen.alarmManager.cancel(Raneen.lecsPendingIntent);
                         toggleEditor.apply();
                         // start service here
                         Toast.makeText(MainActivity.this, "Done! check notification area", Toast.LENGTH_SHORT).show();
@@ -92,7 +70,8 @@ public class MainActivity extends AppCompatActivity {
                         serviceIntent.putExtra("currentLec", 0);
                         Raneen.getContext().startService(serviceIntent);
                         // Builds the notification and issues it.
-                        mNotifyMgr.notify(notificationID, mBuilder.build());
+                        Raneen.mNotifyMgr.notify(Raneen.notificationID, Raneen.mBuilder.build());
+                        triggerServiceEveryDay();
                         return;
                     }
                 Toast.makeText(MainActivity.this, "No schedule to set!", Toast.LENGTH_SHORT).show();
@@ -107,10 +86,11 @@ public class MainActivity extends AppCompatActivity {
                 cancelBtns("lec3", btn3);
                 cancelBtns("lec4", btn4);
                 cancelBtns("lec5", btn5);
-                for (boolean btn : btns) btn = false;
-                Raneen.alarmManager.cancel(Raneen.pendingIntent);
+                for (int i=0; i<5; i++) btns[i] = false;
+                Raneen.alarmManager.cancel(Raneen.lecsPendingIntent);
+                Raneen.alarmManager.cancel(Raneen.triggerPendingIntent);
                 Toast.makeText(MainActivity.this, "All schedules canceled!", Toast.LENGTH_SHORT).show();
-                mNotifyMgr.cancel(notificationID);
+                Raneen.mNotifyMgr.cancel(Raneen.notificationID);
             }
 
         });
@@ -183,10 +163,10 @@ public class MainActivity extends AppCompatActivity {
         if(!btns[i]) {
             toggleEditor.putString(lec, "green");
             btns[i] = !btns[i]; // true
-            btn.setBackgroundColor(getResources().getColor(R.color.LightGreen));
+            btn.setBackgroundResource(R.drawable.green_button);
         }else {
             toggleEditor.putString(lec, "null");
-            btn.setBackgroundColor(getResources().getColor(R.color.LightRed));
+            btn.setBackgroundResource(R.drawable.red_button);
             btns[i] = !btns[i]; // false
         }
 
@@ -199,9 +179,9 @@ public class MainActivity extends AppCompatActivity {
         if(Raneen.sharedPref.getString(lec,"null").equals("null")) { // create new key
             restoreEditor.putString(lec, "null");
             btns[i] = false;
-            btn.setBackgroundColor(getResources().getColor(R.color.LightRed));
+            btn.setBackgroundResource(R.drawable.red_button);
         }else {
-            btn.setBackgroundColor(getResources().getColor(R.color.LightGreen));
+            btn.setBackgroundResource(R.drawable.green_button);
             btns[i] = true;
         }
         restoreEditor.apply(); // save
@@ -210,8 +190,24 @@ public class MainActivity extends AppCompatActivity {
     private void cancelBtns (String lec, Button btn){
 
         restoreEditor.putString(lec, "null");
-        btn.setBackgroundColor(getResources().getColor(R.color.LightRed));
+        btn.setBackgroundResource(R.drawable.red_button);
         restoreEditor.apply(); // save
+    }
+
+    private void triggerServiceEveryDay(){
+
+        // 1. Intent to the BCR
+        Intent triggerIntent = new Intent(Raneen.getContext(), AlarmBCReceiver.class);
+        triggerIntent.putExtra("alarm","trigger");
+        // 2. Create PendingIntent to put the above intent inside it.
+        // PendingIntent used to describe an Intent, and encapsulate info
+        // This code returns the pending intent but suitable to use to broadcast intent
+        Raneen.triggerPendingIntent = PendingIntent.getBroadcast(Raneen.getContext(),0,triggerIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+        // 3. Get Alarm manager
+        // AlarmManager alarmManager = (AlarmManager) Raneen.getContext().getSystemService(Context.ALARM_SERVICE);
+        // 4. Pass the PendingIntent to the AlarmManager, the pending intent tells the alarm what to do after counting down
+        Raneen.alarmManager.setRepeating(AlarmManager.RTC, Raneen.lecs.get(0).getTimeInMillis() - AlarmManager.INTERVAL_FIFTEEN_MINUTES, AlarmManager.INTERVAL_DAY, Raneen.triggerPendingIntent);
+        // when the alarm finishes counting, it will send back a broadcast as our AlarmBCR class will receive it
     }
 
 }

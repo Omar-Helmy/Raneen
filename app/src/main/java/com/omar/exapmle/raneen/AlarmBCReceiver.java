@@ -16,7 +16,7 @@ public class AlarmBCReceiver extends BroadcastReceiver {
         // start service here
         Intent serviceIntent = new Intent(Raneen.getContext(), RaneenService.class);
         serviceIntent.putExtra("alarm", intent.getStringExtra("alarm"));
-        serviceIntent.putExtra("currentLec", intent.getIntExtra("currentLec",-1));
+        serviceIntent.putExtra("currentLec", intent.getIntExtra("currentLec", -1));
         context.startService(serviceIntent);
     }
 }

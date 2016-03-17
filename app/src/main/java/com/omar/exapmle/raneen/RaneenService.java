@@ -11,7 +11,6 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -20,8 +19,7 @@ import java.util.GregorianCalendar;
  */
 public class RaneenService extends IntentService {
 
-    // create array of all 5 lecs
-    private final ArrayList<Calendar> lecs = new ArrayList<>(5);
+
     private final static long LEC_DURATION = 5400000; // hour and half hour = 90 min
     // Current calender:
     private final Calendar currentCalender = GregorianCalendar.getInstance();
@@ -40,11 +38,13 @@ public class RaneenService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
 
-        setLecsCalenders();
         String alarmStatus = intent.getStringExtra("alarm");
         currentLec = intent.getIntExtra("currentLec",-1);
 
         switch (alarmStatus){
+            case "trigger":
+                //Raneen.mNotifyMgr.notify(Raneen.notificationID, Raneen.mBuilder.build());
+                // continue other cases
             case "nextLec":
             case "firstTime":
             {
@@ -54,14 +54,15 @@ public class RaneenService extends IntentService {
                 if (setAlarmIfGreen("lec2",1)) break;
                 if (setAlarmIfGreen("lec3", 2)) break;
                 if (setAlarmIfGreen("lec4",3)) break;
-                if (setAlarmIfGreen("lec5",4)) break;
+                if (setAlarmIfGreen("lec5", 4)) break;
+                //if (!alarmStatus.equals("trigger")) Raneen.mNotifyMgr.cancel(Raneen.notificationID);
                 break;
             }
             case "lecDuration":{
                 // silent phone
                 // run hour and half
                 setRingerModeVibrate();
-                setAlarm("nextLec", lecs.get(currentLec).getTimeInMillis() + LEC_DURATION, currentLec);
+                setAlarm("nextLec", Raneen.lecs.get(currentLec).getTimeInMillis() + LEC_DURATION, currentLec);
                 break;
             }
         }
@@ -70,8 +71,8 @@ public class RaneenService extends IntentService {
 
     private boolean setAlarmIfGreen(String lec, int i){
         if( (!Raneen.sharedPref.getString(lec,"null").equals("null")) &&
-                ((lecs.get(i).getTimeInMillis() >= currentTimeMillis) || ((lecs.get(i).getTimeInMillis() < currentTimeMillis)&&((lecs.get(i).getTimeInMillis()+LEC_DURATION) > currentTimeMillis)))) {
-            setAlarm("lecDuration", lecs.get(i).getTimeInMillis(), i);
+                ((Raneen.lecs.get(i).getTimeInMillis() >= currentTimeMillis) || ((Raneen.lecs.get(i).getTimeInMillis() < currentTimeMillis)&&((Raneen.lecs.get(i).getTimeInMillis()+LEC_DURATION) > currentTimeMillis)))) {
+            setAlarm("lecDuration", Raneen.lecs.get(i).getTimeInMillis(), i);
             return true;
         }
         else {
@@ -80,33 +81,7 @@ public class RaneenService extends IntentService {
         }
     }
 
-    private void setLecsCalenders(){
 
-        // create array of all 5 lecs
-        for(int i=0; i<5; i++)
-            lecs.add(i, GregorianCalendar.getInstance());
-
-        // change current time to specific hour, minute, second:
-        lecs.get(0).set(Calendar.HOUR_OF_DAY, 8);
-        lecs.get(0).set(Calendar.MINUTE, 30);
-        lecs.get(0).set(Calendar.SECOND, 0);
-
-        lecs.get(1).set(Calendar.HOUR_OF_DAY, 10);
-        lecs.get(1).set(Calendar.MINUTE, 15);
-        lecs.get(1).set(Calendar.SECOND, 0);
-
-        lecs.get(2).set(Calendar.HOUR_OF_DAY, 12);
-        lecs.get(2).set(Calendar.MINUTE, 15);
-        lecs.get(2).set(Calendar.SECOND, 0);
-
-        lecs.get(3).set(Calendar.HOUR_OF_DAY, 14);
-        lecs.get(3).set(Calendar.MINUTE, 0);
-        lecs.get(3).set(Calendar.SECOND, 0);
-
-        lecs.get(4).set(Calendar.HOUR_OF_DAY, 15);
-        lecs.get(4).set(Calendar.MINUTE, 45);
-        lecs.get(4).set(Calendar.SECOND, 0);
-    }
 
     private void setAlarm(String msg, long time, int i){
 
@@ -117,11 +92,11 @@ public class RaneenService extends IntentService {
         // 2. Create PendingIntent to put the above intent inside it.
         // PendingIntent used to describe an Intent, and encapsulate info
         // This code returns the pending intent but suitable to use to broadcast intent
-        Raneen.pendingIntent = PendingIntent.getBroadcast(Raneen.getContext(),0,alarmBCRIntent,PendingIntent.FLAG_ONE_SHOT);
+        Raneen.lecsPendingIntent = PendingIntent.getBroadcast(Raneen.getContext(),0,alarmBCRIntent,PendingIntent.FLAG_ONE_SHOT);
         // 3. Get Alarm manager
         // AlarmManager alarmManager = (AlarmManager) Raneen.getContext().getSystemService(Context.ALARM_SERVICE);
         // 4. Pass the PendingIntent to the AlarmManager, the pending intent tells the alarm what to do after counting down
-        Raneen.alarmManager.set(AlarmManager.RTC, time, Raneen.pendingIntent);
+        Raneen.alarmManager.set(AlarmManager.RTC, time, Raneen.lecsPendingIntent);
         // when the alarm finishes counting, it will send back a broadcast as our AlarmBCR class will receive it
     }
 
